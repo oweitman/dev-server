@@ -156,8 +156,13 @@ class DevServer {
             description:
               'Do not watch the given files or directories for changes (provide paths relative to the adapter base directory.',
           },
+          doVisdebug: {
+            type: 'boolean',
+            alias: 'v',
+            description: 'Do not start visdebug for uploading for vis1.',
+          },
         },
-        async (args) => await this.watch(!args.noStart, !!args.noInstall, args.doNotWatch),
+        async (args) => await this.watch(!args.noStart, !!args.noInstall, args.doNotWatch, !!args.noVisdebug),
       )
       .command(
         ['debug [profile]', 'd'],
@@ -422,7 +427,12 @@ class DevServer {
     await this.startServer();
   }
 
-  async watch(startAdapter: boolean, noInstall: boolean, doNotWatch: string | string[] | undefined): Promise<void> {
+  async watch(
+    startAdapter: boolean,
+    noInstall: boolean,
+    doNotWatch: string | string[] | undefined,
+    noVisdebug: boolean,
+  ): Promise<void> {
     let doNotWatchArr: string[] = [];
     if (typeof doNotWatch === 'string') {
       doNotWatchArr.push(doNotWatch);
@@ -437,12 +447,12 @@ class DevServer {
     }
     if (this.isJSController()) {
       // this watches actually js-controller
-      await this.startAdapterWatch(startAdapter, doNotWatchArr);
+      await this.startAdapterWatch(startAdapter, doNotWatchArr, noVisdebug);
       await this.startServer();
     } else {
       await this.startJsController();
       await this.startServer();
-      await this.startAdapterWatch(startAdapter, doNotWatchArr);
+      await this.startAdapterWatch(startAdapter, doNotWatchArr, noVisdebug);
     }
   }
 
@@ -1038,7 +1048,7 @@ class DevServer {
     );
   }
 
-  private async startAdapterWatch(startAdapter: boolean, doNotWatch: string[]): Promise<void> {
+  private async startAdapterWatch(startAdapter: boolean, doNotWatch: string[], noVisdebug: boolean): Promise<void> {
     // figure out if we need to watch for TypeScript changes
     const pkg = await this.readPackageJson();
     const scripts = pkg.scripts;
@@ -1051,7 +1061,7 @@ class DevServer {
     const adapterRunDir = path.join(this.profileDir, 'node_modules', `iobroker.${this.adapterName}`);
     if (!this.config?.useSymlinks) {
       // This is not necessary when using symlinks
-      await this.startFileSync(adapterRunDir);
+      await this.startFileSync(adapterRunDir, noVisdebug);
     }
 
     if (startAdapter) {
@@ -1072,7 +1082,7 @@ class DevServer {
     await this.spawnAndAwaitOutput('npm', ['run', 'watch:ts'], this.rootDir, /watching (files )?for/i, { shell: true });
   }
 
-  private startFileSync(destinationDir: string): Promise<void> {
+  private startFileSync(destinationDir: string, noVisdebug: boolean): Promise<void> {
     this.log.notice(`Starting file system sync from ${this.rootDir}`);
     const inSrc = (filename: string): string => path.join(this.rootDir, filename);
     const inDest = (filename: string): string => path.join(destinationDir, filename);
@@ -1126,7 +1136,7 @@ class DevServer {
       };
       watcher.on('add', (filename: string) => {
         if (ready) {
-          if (filename.startsWith('widgets')) {
+          if (filename.startsWith('widgets') && !noVisdebug) {
             this.log.debug(`request visdebug ${filename}`);
             isWidgetDir = true;
             clearTimeout(widgetTimerID);
@@ -1146,7 +1156,7 @@ class DevServer {
           if (!ready) {
             initialEventPromises.push(resPromise);
           }
-          if (filename.startsWith('widgets')) {
+          if (filename.startsWith('widgets') && !noVisdebug) {
             this.log.debug(`request visdebug ${filename}`);
             isWidgetDir = true;
             clearTimeout(widgetTimerID);
@@ -1160,7 +1170,7 @@ class DevServer {
         if (existsSync(map)) {
           unlinkSync(map);
         }
-        if (filename.startsWith('widgets/')) {
+        if (filename.startsWith('widgets') && !noVisdebug) {
           isWidgetDir = true;
           clearTimeout(widgetTimerID);
           widgetTimerID = setTimeout(vis1debug, widgetDelay);
