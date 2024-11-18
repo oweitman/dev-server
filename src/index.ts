@@ -1126,7 +1126,7 @@ class DevServer {
       };
       watcher.on('add', (filename: string) => {
         if (ready) {
-          if (filename.startsWith('widgets/')) {
+          if (filename.startsWith('widgets')) {
             this.log.debug(`request visdebug ${filename}`);
             isWidgetDir = true;
             clearTimeout(widgetTimerID);
@@ -1146,7 +1146,7 @@ class DevServer {
           if (!ready) {
             initialEventPromises.push(resPromise);
           }
-          if (filename.startsWith('widgets/')) {
+          if (filename.startsWith('widgets')) {
             this.log.debug(`request visdebug ${filename}`);
             isWidgetDir = true;
             clearTimeout(widgetTimerID);
