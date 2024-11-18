@@ -899,6 +899,9 @@ class DevServer {
             const patterns = this.getFilePatterns(['js', 'map', 'css', 'html', 'png', 'jpg'], true);
             const ignoreFiles = [];
             const watcher = chokidar_1.default.watch(patterns, { cwd: this.rootDir });
+            let isWidgetDir = false;
+            const widgetDelay = 500;
+            let widgetTimerID;
             let ready = false;
             let initialEventPromises = [];
             watcher.on('error', reject);
@@ -931,8 +934,24 @@ class DevServer {
                     this.log.warn(`Couldn't sync ${filename}`);
                 }
             };
+            const vis1debug = async () => {
+                try {
+                    clearTimeout(widgetTimerID);
+                    if (isWidgetDir) {
+                        this.visDebugAdapter(this.adapterName);
+                    }
+                }
+                catch (error) {
+                    this.log.error(`Error calling visdebug: ${error}`);
+                }
+            };
             watcher.on('add', (filename) => {
                 if (ready) {
+                    if (filename.startsWith('widgets/')) {
+                        isWidgetDir = true;
+                        clearTimeout(widgetTimerID);
+                        widgetTimerID = setTimeout(vis1debug, widgetDelay);
+                    }
                     syncFile(filename);
                 }
                 else if (!filename.endsWith('map') && !(0, fs_extra_1.existsSync)(inDest(filename))) {
@@ -949,6 +968,11 @@ class DevServer {
                     if (!ready) {
                         initialEventPromises.push(resPromise);
                     }
+                    if (filename.startsWith('widgets/')) {
+                        isWidgetDir = true;
+                        clearTimeout(widgetTimerID);
+                        widgetTimerID = setTimeout(vis1debug, widgetDelay);
+                    }
                 }
             });
             watcher.on('unlink', (filename) => {
@@ -956,6 +980,11 @@ class DevServer {
                 const map = inDest(filename + '.map');
                 if ((0, fs_extra_1.existsSync)(map)) {
                     (0, fs_extra_1.unlinkSync)(map);
+                }
+                if (filename.startsWith('widgets/')) {
+                    isWidgetDir = true;
+                    clearTimeout(widgetTimerID);
+                    widgetTimerID = setTimeout(vis1debug, widgetDelay);
                 }
             });
         });
@@ -980,7 +1009,7 @@ class DevServer {
             script: script,
             stdin: false,
             verbose: true,
-            dump: true, // this will output the entire config and not do anything
+            // dump: true, // this will output the entire config and not do anything
             colours: false,
             watch: [baseDir],
             ignore: ignoreList,
@@ -1021,10 +1050,6 @@ class DevServer {
             .on('quit', () => {
             this.log.error('nodemon has exited');
             return this.exit(-2);
-        })
-            .on('restart', (files) => {
-            this.log.error('nodemon restart');
-            this.log.notice(`Files changed: ${(files || []).join(', ')}`);
         })
             .on('crash', () => {
             if (this.isJSController()) {
