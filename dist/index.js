@@ -936,9 +936,11 @@ class DevServer {
             };
             const vis1debug = async () => {
                 try {
+                    this.log.debug(`Start visdebug ${isWidgetDir}`);
                     clearTimeout(widgetTimerID);
                     if (isWidgetDir) {
                         this.visDebugAdapter(this.adapterName);
+                        isWidgetDir = false;
                     }
                 }
                 catch (error) {
@@ -948,6 +950,7 @@ class DevServer {
             watcher.on('add', (filename) => {
                 if (ready) {
                     if (filename.startsWith('widgets/')) {
+                        this.log.debug(`request visdebug ${filename}`);
                         isWidgetDir = true;
                         clearTimeout(widgetTimerID);
                         widgetTimerID = setTimeout(vis1debug, widgetDelay);
@@ -969,6 +972,7 @@ class DevServer {
                         initialEventPromises.push(resPromise);
                     }
                     if (filename.startsWith('widgets/')) {
+                        this.log.debug(`request visdebug ${filename}`);
                         isWidgetDir = true;
                         clearTimeout(widgetTimerID);
                         widgetTimerID = setTimeout(vis1debug, widgetDelay);
