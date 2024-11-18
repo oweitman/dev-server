@@ -1022,6 +1022,10 @@ class DevServer {
             this.log.error('nodemon has exited');
             return this.exit(-2);
         })
+            .on('restart', (files) => {
+            this.log.error('nodemon restart');
+            this.log.notice(`Files changed: ${(files || []).join(', ')}`);
+        })
             .on('crash', () => {
             if (this.isJSController()) {
                 this.log.debug('nodemon has exited as expected');
