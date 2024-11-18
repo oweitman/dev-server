@@ -1077,7 +1077,7 @@ class DevServer {
     const inSrc = (filename: string): string => path.join(this.rootDir, filename);
     const inDest = (filename: string): string => path.join(destinationDir, filename);
     return new Promise<void>((resolve, reject) => {
-      const patterns = this.getFilePatterns(['js', 'map'], true);
+      const patterns = this.getFilePatterns(['js', 'map', 'css', 'html', 'png', 'jpg'], true);
       const ignoreFiles = [] as string[];
       const watcher = chokidar.watch(patterns, { cwd: this.rootDir });
       let ready = false;
@@ -1511,6 +1511,11 @@ class DevServer {
   private uploadAdapter(name: string): void {
     this.log.notice(`Upload iobroker.${name}`);
     this.execSync(`${IOBROKER_COMMAND} upload ${name}`, this.profileDir);
+  }
+
+  private visDebugAdapter(name: string): void {
+    this.log.notice(`Visdebug iobroker.${name}`);
+    this.execSync(`${IOBROKER_COMMAND} visdebug ${name}`, this.profileDir);
   }
 
   private async buildLocalAdapter(): Promise<void> {

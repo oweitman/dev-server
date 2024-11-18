@@ -47,3 +47,4 @@ setTimeout(async () => {
 </head>`);
 }
 exports.injectCode = injectCode;
+//# sourceMappingURL=jsonConfig.js.map
