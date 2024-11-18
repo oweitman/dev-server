@@ -1080,6 +1080,9 @@ class DevServer {
       const patterns = this.getFilePatterns(['js', 'map', 'css', 'html', 'png', 'jpg'], true);
       const ignoreFiles = [] as string[];
       const watcher = chokidar.watch(patterns, { cwd: this.rootDir });
+      let isWidgetDir = false;
+      const widgetDelay = 500;
+      let widgetTimerID: NodeJS.Timeout | undefined;
       let ready = false;
       let initialEventPromises: Promise<void>[] = [];
       watcher.on('error', reject);
@@ -1109,8 +1112,23 @@ class DevServer {
           this.log.warn(`Couldn't sync ${filename}`);
         }
       };
+      const vis1debug = async (): Promise<void> => {
+        try {
+          clearTimeout(widgetTimerID);
+          if (isWidgetDir) {
+            this.visDebugAdapter(this.adapterName);
+          }
+        } catch (error: any) {
+          this.log.error(`Error calling visdebug: ${error}`);
+        }
+      };
       watcher.on('add', (filename: string) => {
         if (ready) {
+          if (filename.startsWith('widgets/')) {
+            isWidgetDir = true;
+            clearTimeout(widgetTimerID);
+            widgetTimerID = setTimeout(vis1debug, widgetDelay);
+          }
           syncFile(filename);
         } else if (!filename.endsWith('map') && !existsSync(inDest(filename))) {
           // ignore files during initial sync if they don't exist in the target directory (except for sourcemaps)
@@ -1125,6 +1143,11 @@ class DevServer {
           if (!ready) {
             initialEventPromises.push(resPromise);
           }
+          if (filename.startsWith('widgets/')) {
+            isWidgetDir = true;
+            clearTimeout(widgetTimerID);
+            widgetTimerID = setTimeout(vis1debug, widgetDelay);
+          }
         }
       });
       watcher.on('unlink', (filename: string) => {
@@ -1132,6 +1155,11 @@ class DevServer {
         const map = inDest(filename + '.map');
         if (existsSync(map)) {
           unlinkSync(map);
+        }
+        if (filename.startsWith('widgets/')) {
+          isWidgetDir = true;
+          clearTimeout(widgetTimerID);
+          widgetTimerID = setTimeout(vis1debug, widgetDelay);
         }
       });
     });
@@ -1161,7 +1189,7 @@ class DevServer {
       script: script,
       stdin: false,
       verbose: true,
-      dump: true, // this will output the entire config and not do anything
+      // dump: true, // this will output the entire config and not do anything
       colours: false,
       watch: [baseDir],
       ignore: ignoreList,
@@ -1203,10 +1231,6 @@ class DevServer {
       .on('quit', () => {
         this.log.error('nodemon has exited');
         return this.exit(-2);
-      })
-      .on('restart', (files) => {
-        this.log.error('nodemon restart');
-        this.log.notice(`Files changed: ${(files || []).join(', ')}`);
       })
       .on('crash', () => {
         if (this.isJSController()) {
