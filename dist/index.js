@@ -919,7 +919,7 @@ class DevServer {
                     if (filename.endsWith('.map')) {
                         await this.patchSourcemap(src, dest);
                     }
-                    else if (!(0, fs_extra_1.existsSync)(inSrc(`${filename}.map`))) {
+                    else if (filename.endsWith('.js') && !(0, fs_extra_1.existsSync)(inSrc(`${filename}.map`))) {
                         // copy file and add sourcemap
                         await this.addSourcemap(src, dest, true);
                     }
