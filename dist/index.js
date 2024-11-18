@@ -980,7 +980,7 @@ class DevServer {
             script: script,
             stdin: false,
             verbose: true,
-            // dump: true, // this will output the entire config and not do anything
+            dump: true, // this will output the entire config and not do anything
             colours: false,
             watch: [baseDir],
             ignore: ignoreList,
