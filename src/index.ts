@@ -1128,6 +1128,7 @@ class DevServer {
           clearTimeout(widgetTimerID);
           if (isWidgetDir) {
             this.visDebugAdapter(this.adapterName);
+            this.visUploadAdapter(this.adapterName);
             isWidgetDir = false;
           }
         } catch (error: any) {
@@ -1558,6 +1559,10 @@ class DevServer {
   private visDebugAdapter(name: string): void {
     this.log.notice(`Visdebug iobroker.${name}`);
     this.execSync(`${IOBROKER_COMMAND} visdebug ${name}`, this.profileDir);
+  }
+  private visUploadAdapter(name: string): void {
+    this.log.notice(`upload iobroker.${name}`);
+    this.execSync(`${IOBROKER_COMMAND} upload ${name}`, this.profileDir);
   }
 
   private async buildLocalAdapter(): Promise<void> {
