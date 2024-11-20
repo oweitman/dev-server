@@ -945,6 +945,7 @@ class DevServer {
                     clearTimeout(widgetTimerID);
                     if (isWidgetDir) {
                         this.visDebugAdapter(this.adapterName);
+                        this.visUploadAdapter(this.adapterName);
                         isWidgetDir = false;
                     }
                 }
@@ -1338,6 +1339,10 @@ class DevServer {
     visDebugAdapter(name) {
         this.log.notice(`Visdebug iobroker.${name}`);
         this.execSync(`${IOBROKER_COMMAND} visdebug ${name}`, this.profileDir);
+    }
+    visUploadAdapter(name) {
+        this.log.notice(`upload iobroker.${name}`);
+        this.execSync(`${IOBROKER_COMMAND} upload ${name}`, this.profileDir);
     }
     async buildLocalAdapter() {
         var _a;
